@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block title %}Inicio{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">Bienvenido, {{ usuario }}</h2>
+<p>Estos son los productos registrados en el sistema:</p>
+
+<!-- Buscador -->
+<form method="POST" class="mb-4 d-flex" style="max-width: 400px;">
+    <input type="text" name="filtro" class="form-control me-2" placeholder="Buscar producto...">
+    <button type="submit" class="btn btn-success">Buscar</button>
+</form>
+
+<!-- Cards de productos -->
+{% if productos %}
+
+{% if session['rol'] == 'admin' %}
+<a href="/editar_producto/{{ producto[0] }}" class="btn btn-outline-success">Editar</a>
+{% endif %}
+
+<div class="row">
+    {% for producto in productos %}
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 shadow-sm">
+            {% if producto[3] %}
+            <img src="{{ producto[3] }}" class="card-img-top" alt="{{ producto[1] }}" style="height: 200px; object-fit: cover;">
+            {% else %}
+            <img src="https://via.placeholder.com/300x200?text=Sin+imagen" class="card-img-top" alt="Sin imagen">
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ producto[1] }}</h5>
+                <p class="card-text">Precio: ${{ producto[2] }}</p>
+                <a href="/editar_producto/{{ producto[0] }}" class="btn btn-outline-success">Editar</a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning">No hay productos registrados aún.</div>
+{% endif %}
+
+<!-- Botón de regreso -->
+<div class="mt-4">
+    <a href="/menu" class="btn btn-success">Ir al menú principal</a>
+</div>
+{% endblock %}

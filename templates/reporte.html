@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte{% endblock %}
+
+{% block content %}
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reporte de Productos</title>
+<!-- Bootstrap CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <h1>Reporte: Productos con precio mayor a $1000</h1>
+    {% if productos %}
+        <table border="1">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Precio</th>
+            </tr>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto[0] }}</td>
+                <td>{{ producto[1] }}</td>
+                <td>${{ producto[2] }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>No hay productos que cumplan con el criterio.</p>
+    {% endif %}
+    <a href="/menu">Volver al menú</a>
+</body>
+</html>
+
+{% endblock %}
