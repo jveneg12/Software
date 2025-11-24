@@ -8,10 +8,12 @@ app.secret_key = 'clave_secreta'
 def validar_usuario(usuario, clave):
     conn = sqlite3.connect('database.db')
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios WHERE usuario=? AND clave=?", (usuario, clave))
+    cursor.execute("SELECT usuario, rol FROM usuarios WHERE usuario=? AND clave=?", (usuario, clave))
     resultado = cursor.fetchone()
     conn.close()
-    return resultado
+    return resultado  # Devuelve (usuario, rol)
+
+
 
 # 🟢 Login
 @app.route('/', methods=['GET', 'POST'])
@@ -19,12 +21,18 @@ def login():
     if request.method == 'POST':
         usuario = request.form['usuario']
         clave = request.form['clave']
-        if validar_usuario(usuario, clave):
-            session['usuario'] = usuario
-            return redirect(url_for('menu'))
+        resultado = validar_usuario(usuario, clave)
+        if resultado:
+            session['usuario'] = resultado[0]
+            session['rol'] = resultado[1]
+            if session['rol'] == 'admin':
+                return redirect(url_for('menu'))
+            else:
+                return redirect(url_for('inicio'))
         else:
             return render_template('login.html', error='Credenciales incorrectas')
     return render_template('login.html')
+
 
 # 🏠 Menú principal
 @app.route('/menu')
@@ -103,6 +111,12 @@ def reporte():
     conn.close()
     return render_template('reporte.html', productos=productos)
 
+
+
+def calcular_total_carrito(carrito):
+    return sum(item['precio'] * item['cantidad'] for item in carrito)
+
+
 @app.route('/inicio', methods=['GET', 'POST'])
 def inicio():
     if 'usuario' in session:
@@ -117,7 +131,65 @@ def inicio():
 
         productos = cursor.fetchall()
         conn.close()
-        return render_template('inicio.html', usuario=session['usuario'], productos=productos)
+
+        # Inicializar carrito si no existe
+        if 'carrito' not in session:
+            session['carrito'] = []
+
+        # Calcular total del carrito
+        total = calcular_total_carrito(session['carrito'])
+
+        return render_template('inicio.html', usuario=session['usuario'], productos=productos, total=total)
+    return redirect(url_for('login'))
+
+
+
+
+@app.route('/comprar/<int:id>')
+def comprar(id):
+    if 'usuario' in session:
+        conn = sqlite3.connect('database.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM productos WHERE id=?", (id,))
+        producto = cursor.fetchone()
+        conn.close()
+
+        if producto:
+            carrito = session.get('carrito', [])
+            encontrado = False
+
+            for item in carrito:
+                if item['id'] == producto[0]:
+                    item['cantidad'] += 1
+                    encontrado = True
+                    break
+
+            if not encontrado:
+                carrito.append({
+                    'id': producto[0],
+                    'nombre': producto[1],
+                    'precio': producto[2],
+                    'imagen': producto[3],
+                    'cantidad': 1
+                })
+
+            session['carrito'] = carrito
+
+        return redirect(url_for('inicio'))
+    return redirect(url_for('login'))
+
+@app.route('/vaciar_carrito')
+def vaciar_carrito():
+    if 'usuario' in session:
+        session['carrito'] = []
+        return redirect(url_for('inicio'))
+    return redirect(url_for('login'))
+
+
+
+@app.route('/logout')
+def logout():
+    session.clear()
     return redirect(url_for('login'))
 
 
@@ -126,4 +198,12 @@ def inicio():
 if __name__ == '__main__':
     app.run(debug=True)
 # Página de inicio después del login
+
+
+
+
+
+
+
+
 

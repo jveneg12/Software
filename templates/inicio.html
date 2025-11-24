@@ -14,11 +14,6 @@
 
 <!-- Cards de productos -->
 {% if productos %}
-
-{% if session['rol'] == 'admin' %}
-<a href="/editar_producto/{{ producto[0] }}" class="btn btn-outline-success">Editar</a>
-{% endif %}
-
 <div class="row">
     {% for producto in productos %}
     <div class="col-md-4 mb-4">
@@ -31,7 +26,12 @@
             <div class="card-body">
                 <h5 class="card-title">{{ producto[1] }}</h5>
                 <p class="card-text">Precio: ${{ producto[2] }}</p>
-                <a href="/editar_producto/{{ producto[0] }}" class="btn btn-outline-success">Editar</a>
+
+                {% if session['rol'] == 'admin' %}
+                    <a href="/editar_producto/{{ producto[0] }}" class="btn btn-outline-success">Editar</a>
+                {% else %}
+                    <a href="{{ url_for('comprar', id=producto[0]) }}" class="btn btn-outline-primary">Comprar</a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -41,8 +41,35 @@
 <div class="alert alert-warning">No hay productos registrados aún.</div>
 {% endif %}
 
+<!-- 🛒 Carrito de compras -->
+{% if session['rol'] == 'usuario' and session.get('carrito') %}
+<div class="mt-5">
+    <h4>🛒 Carrito de compras</h4>
+    <ul class="list-group">
+        {% for item in session['carrito'] %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+            {{ item['nombre'] }} - ${{ item['precio'] }}
+            <img src="{{ item['imagen'] }}" width="50">
+        </li>
+        {% endfor %}
+    </ul>
+
+    <!-- Total -->
+    <p class="mt-3"><strong>Total:</strong> $
+        {{ session['carrito'] | map(attribute='precio') | sum }}
+    </p>
+
+    <a href="{{ url_for('vaciar_carrito') }}" class="btn btn-danger mt-2">Vaciar carrito</a>
+</div>
+{% endif %}
+
+
 <!-- Botón de regreso -->
 <div class="mt-4">
-    <a href="/menu" class="btn btn-success">Ir al menú principal</a>
+    {% if session['rol'] == 'admin' %}
+        <a href="/menu" class="btn btn-success">Ir al menú principal</a>
+    {% else %}
+        <a href="{{ url_for('logout') }}" class="btn btn-secondary">Cerrar sesión</a>
+    {% endif %}
 </div>
 {% endblock %}
