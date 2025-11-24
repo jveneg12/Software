@@ -13,26 +13,46 @@ def validar_usuario(usuario, clave):
     conn.close()
     return resultado  # Devuelve (usuario, rol)
 
-
-
-# 🟢 Login
+# 🟢 Login + Registro en la misma vista
 @app.route('/', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        usuario = request.form['usuario']
-        clave = request.form['clave']
-        resultado = validar_usuario(usuario, clave)
-        if resultado:
-            session['usuario'] = resultado[0]
-            session['rol'] = resultado[1]
-            if session['rol'] == 'admin':
-                return redirect(url_for('menu'))
+        if 'ingresar' in request.form:
+            usuario = request.form['usuario']
+            clave = request.form['clave']
+            resultado = validar_usuario(usuario, clave)
+            if resultado:
+                session['usuario'] = resultado[0]
+                session['rol'] = resultado[1]
+                return redirect(url_for('menu') if session['rol'] == 'admin' else url_for('inicio'))
             else:
-                return redirect(url_for('inicio'))
-        else:
-            return render_template('login.html', error='Credenciales incorrectas')
-    return render_template('login.html')
+                return render_template('login.html', error='Credenciales incorrectas')
 
+        elif 'registrar' in request.form:
+            nuevo_usuario = request.form['nuevo_usuario']
+            nueva_clave = request.form['nueva_clave']
+            rol = 'usuario'  # Fijamos el rol como usuario
+
+            conn = sqlite3.connect('database.db')
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM usuarios WHERE usuario = ?", (nuevo_usuario,))
+            existente = cursor.fetchone()
+
+            if existente:
+                conn.close()
+                return render_template('login.html', error_registro='El usuario ya existe.')
+
+            cursor.execute("INSERT INTO usuarios (usuario, clave, rol) VALUES (?, ?, ?)",
+                           (nuevo_usuario, nueva_clave, rol))
+            conn.commit()
+            conn.close()
+
+            # Iniciar sesión automáticamente y redirigir al inicio
+            session['usuario'] = nuevo_usuario
+            session['rol'] = rol
+            return redirect(url_for('inicio'))
+
+    return render_template('login.html')
 
 # 🏠 Menú principal
 @app.route('/menu')
@@ -63,7 +83,6 @@ def agregar_producto():
     conn.close()
     return redirect(url_for('productos'))
 
-
 @app.route('/eliminar_producto/<int:id>')
 def eliminar_producto(id):
     conn = sqlite3.connect('database.db')
@@ -90,8 +109,7 @@ def editar_producto(id):
         conn.close()
         return render_template('editar_producto.html', producto=producto)
 
-
-#  Proceso: total del inventario
+# 📊 Proceso: total del inventario
 @app.route('/proceso')
 def proceso():
     conn = sqlite3.connect('database.db')
@@ -101,7 +119,7 @@ def proceso():
     conn.close()
     return render_template('proceso.html', total=total)
 
-# Reporte: productos con precio > 1000
+# 📋 Reporte: productos con precio > 0
 @app.route('/reporte')
 def reporte():
     conn = sqlite3.connect('database.db')
@@ -111,11 +129,9 @@ def reporte():
     conn.close()
     return render_template('reporte.html', productos=productos)
 
-
-
+# 🛒 Carrito
 def calcular_total_carrito(carrito):
     return sum(item['precio'] * item['cantidad'] for item in carrito)
-
 
 @app.route('/inicio', methods=['GET', 'POST'])
 def inicio():
@@ -132,18 +148,13 @@ def inicio():
         productos = cursor.fetchall()
         conn.close()
 
-        # Inicializar carrito si no existe
         if 'carrito' not in session:
             session['carrito'] = []
 
-        # Calcular total del carrito
         total = calcular_total_carrito(session['carrito'])
 
         return render_template('inicio.html', usuario=session['usuario'], productos=productos, total=total)
     return redirect(url_for('login'))
-
-
-
 
 @app.route('/comprar/<int:id>')
 def comprar(id):
@@ -185,25 +196,11 @@ def vaciar_carrito():
         return redirect(url_for('inicio'))
     return redirect(url_for('login'))
 
-
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
 
-
-
-#  Ejecutar la app
+# 🚀 Ejecutar la app
 if __name__ == '__main__':
     app.run(debug=True)
-# Página de inicio después del login
-
-
-
-
-
-
-
-
-
