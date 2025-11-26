@@ -7,4 +7,4 @@ Feature: Eliminación de productos
     Then debería ver la página de menú
     When selecciono la opción de productos
     Then debería ver la página de productos
-    When elimino el producto con ID "5"
+    When elimino el producto con ID "6"
