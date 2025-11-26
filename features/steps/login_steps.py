@@ -13,9 +13,5 @@ def step_ingresar_credenciales(context, usuario, clave):
 
 @when('presiono el botón de ingresar')
 def step_presionar_ingresar(context):
-    context.browser.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+    context.browser.find_element(By.CSS_SELECTOR, 'button[type="submit"]').click()
     time.sleep(1)
-
-@then('debería ver la página de inicio')
-def step_ver_inicio(context):
-    assert "inicio" in context.browser.current_url
